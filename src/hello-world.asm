@@ -30,6 +30,8 @@ SECTION	"start",ROM0[$0100]
 	ROM_HEADER	ROM_NOMBC, ROM_SIZE_32KBYTE, RAM_SIZE_0KBYTE
 
 ; ****************************************************************************************
+; Initialization
+; ****************************************************************************************
 begin:
 	di                  ; disable interrupts
 	ld	sp, $ffff		; set the stack pointer to highest mem location we can use + 1
@@ -55,22 +57,19 @@ init:
 ; Parameters are explained in the I/O registers section of The GameBoy reference under I/O register LCDC
 	ld	a, LCDCF_ON|LCDCF_BG8000|LCDCF_BG9800|LCDCF_BGON|LCDCF_OBJ16|LCDCF_OBJOFF 
 	ld	[rLCDC], a	
-	
-; Clear the background to all white by setting every tile to whitespace.
 
-	ld	a, 186		; ASCII FOR BLANK SPACE
+; Clear the background to all white by setting every tile to whitespace.
+          
+	ld	a, 186		; Actually, this is the || character     (ASCII FOR BLANK SPACE = 32)
 	ld	hl, _SCRN0
 	ld	bc, SCRN_VX_B * SCRN_VY_B
 	call	mem_SetVRAM
 
 	
 ; ****************************************************************************************
-; Main code:
-; Print a character string in the middle of the screen
+; Loading
+; Print the title to two places on the screen.
 ; ****************************************************************************************
-; Now we need to paint the message
-; " Hello World !" onto our 'canvas'. We do this with
-; one final memory copy routine call.
 
 	ld	hl, Title
 	ld	de, _SCRN0 + 3 + (SCRN_VY_B*7) ; 
@@ -78,28 +77,27 @@ init:
 	call	mem_CopyVRAM
 
 	ld	hl, Title
-	ld	de, _SCRN0 + 3 + (SCRN_VY_B*11) ; 
+	ld	de, _SCRN0 + 3 + (SCRN_VY_B*12) ; 
 	ld	bc, TitleEnd-Title
 	call	mem_CopyVRAM
+
+; ****************************************************************************************
+; Effects
+; ****************************************************************************************
 
 ; Enable the vblank and stat interrupts to try some video effects
 	ld  a, IEF_LCDC|IEF_VBLANK
 	ld  [rIE], a
+
+; Set STAT to MODE00 which means the STAT interrupt happens after drawing every line.
 	ld  a, STATF_MODE00
 	ld  [rSTAT], a
-	ld  d, 50
-	ld  c, 0
+
+; These registers are used by the interrupts
+	ld  d, 50   ; d = extra X scroll, incremented every frame
 	ei
 	
-; ****************************************************************************************
-; Prologue
-; Wait patiently 'til somebody kills you
-; ****************************************************************************************
-; Since we have accomplished our goal, we now have nothing
-; else to do. As a result, we just Jump to a label that
-; causes an infinite loop condition to occur.
-;
-; We are still waiting for 
+; An infinite loop to spin while the interrupts happen.
 wait:
 	halt
 	nop 
@@ -107,31 +105,31 @@ wait:
 
 VBlankSlant:
 	inc d
-	ld	a,d
+	ld  a, d
 	ld	[rSCX], a
-	ld  c, 0
 	ret
 
+; This splits the screen into alternating sets of 8 lines
+; Even sets get x = LY, meaning there is a 45 degree slant.
+; Odd sets get x = -LY meaning there is a slant the other way.
 HBlankSlant:
-	inc c        ; c++
-	ld  a, c     
+	ld  a, [rLY]     
+	inc a            ; (LY is off by one? Not sure why.)
+	ld  c, a         ; c = current LCD line number (LY)
 	and %00001111
-	ld  c, a     ; c = c % 16
 	cp  8
-	ld  a, [rLY]
-	jr  nc, .right ; if c <= 8 then .left else .right
+	ld  a, c         ; a = LY
+	jr  nc, .right   ; if (LY % 16) < 8 then .left else .right
 .left
 	add d
-	ld	[rSCX], a 
-	;ld	[rSCY], a 
+	ld	[rSCX], a    ; Background x scroll = LY + d
 	ret
 .right
 	ld  b, a
 	xor a
 	sub b
 	sub d
-;	ld	[rSCX], a 
-	ld	[rSCY], a 
+	ld	[rSCX], a   ; Background x scroll = - LY - d
 	ret
 	
 ; ****************************************************************************************
@@ -155,7 +153,7 @@ StopLCD:
 ; hard-coded data
 ; ****************************************************************************************
 Title:
-	DB	"Scroll, mofo."
+	DB	"I'm freaking out."
 TitleEnd:
     nop
 
