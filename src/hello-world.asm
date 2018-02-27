@@ -1,25 +1,13 @@
 
 INCLUDE "gbhardware.inc" ; standard hardware definitions from devrs.com
 INCLUDE "ibmpc1.inc" ; ASCII character set from devrs.com
+INCLUDE "interrupts.inc"
 
 lcd_WaitVBlank: MACRO
 	ld      a,[rLY]
 	cp      145           ; Is display on scan line 145 yet?
 	jr      nz,@-4        ; no, keep waiting
 	ENDM
-
-SECTION	"Vblank",ROM0[$0040]
-	call VBlankSlant
-	reti
-SECTION	"LCDC",ROM0[$0048]
-	call HBlankSlant
-	reti
-SECTION	"Timer_Overflow",ROM0[$0050]
-	reti
-SECTION	"Serial",ROM0[$0058]
-	reti
-SECTION	"p1thru4",ROM0[$0060]
-	reti
 
 ; ROM location $0100 is also the code execution starting point
 SECTION	"start",ROM0[$0100]
@@ -84,6 +72,10 @@ init:
 ; ****************************************************************************************
 ; Effects
 ; ****************************************************************************************
+
+; Set the vblank and stat interrupt routines
+	int_SetCallbackFunc VBlankFunc, VBlankSlant
+	int_SetCallbackFunc LCDCFunc, HBlankSlant
 
 ; Enable the vblank and stat interrupts to try some video effects
 	ld  a, IEF_LCDC|IEF_VBLANK
@@ -159,3 +151,5 @@ TitleEnd:
 
 TileData:
     chr_IBMPC1  1,8 ; LOAD ENTIRE CHARACTER SET
+
+

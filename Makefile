@@ -3,10 +3,9 @@ LINK = rgblink
 FIX = rgbfix
 
 #Change the following lines
-ROM_NAME = hello-world
-SOURCES = src/memory.asm src/hello-world.asm
+ROM_NAME = freakout
+SOURCES = $(wildcard src/*.asm)
 FIX_FLAGS = -v -p 0
-
 
 INCDIR = inc
 OBJECTS = $(SOURCES:%.asm=%.o)
