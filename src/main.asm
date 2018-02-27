@@ -23,9 +23,9 @@ SECTION	"start",ROM0[$0100]
 begin:
 	di                  ; disable interrupts
 	ld	sp, $ffff		; set the stack pointer to highest mem location we can use + 1
-	call int_Reset
 
 init:
+	call int_Reset      ; Set all interrupt routines to do nothing
 	ld	a, %11100100 	; Set window palette colors, from darkest to lightest
 	ld	[rBGP], a		
 
@@ -73,57 +73,13 @@ init:
 ; ****************************************************************************************
 ; Effects
 ; ****************************************************************************************
-
-; Set the vblank and stat interrupt routines
-	int_SetVBlankFunc VBlankSlant
-	int_SetLCDCFunc HBlankSlant
-
-; Enable the vblank and stat interrupts to try some video effects
-	ld  a, IEF_LCDC|IEF_VBLANK
-	ld  [rIE], a
-
-; Set STAT to MODE00 which means the STAT interrupt happens after drawing every line.
-	ld  a, STATF_MODE00
-	ld  [rSTAT], a
-
-; These registers are used by the interrupts
-	ld  d, 50   ; d = extra X scroll, incremented every frame
-	ei
-	
-; An infinite loop to spin while the interrupts happen.
-wait:
+effects:
+	call effect1_Run
+	call int_Reset
+.wait
 	halt
 	nop 
-	jr	wait
-
-VBlankSlant:
-	inc d
-	ld  a, d
-	ld	[rSCX], a
-	ret
-
-; This splits the screen into alternating sets of 8 lines
-; Even sets get x = LY, meaning there is a 45 degree slant.
-; Odd sets get x = -LY meaning there is a slant the other way.
-HBlankSlant:
-	ld  a, [rLY]     
-	inc a            ; (LY is off by one? Not sure why.)
-	ld  c, a         ; c = current LCD line number (LY)
-	and %00001111
-	cp  8
-	ld  a, c         ; a = LY
-	jr  nc, .right   ; if (LY % 16) < 8 then .left else .right
-.left
-	add d
-	ld	[rSCX], a    ; Background x scroll = LY + d
-	ret
-.right
-	ld  b, a
-	xor a
-	sub b
-	sub d
-	ld	[rSCX], a   ; Background x scroll = - LY - d
-	ret
+	jr .wait
 	
 ; ****************************************************************************************
 ; StopLCD:
