@@ -23,6 +23,7 @@ SECTION	"start",ROM0[$0100]
 begin:
 	di                  ; disable interrupts
 	ld	sp, $ffff		; set the stack pointer to highest mem location we can use + 1
+	call int_Reset
 
 init:
 	ld	a, %11100100 	; Set window palette colors, from darkest to lightest
@@ -74,8 +75,8 @@ init:
 ; ****************************************************************************************
 
 ; Set the vblank and stat interrupt routines
-	int_SetCallbackFunc VBlankFunc, VBlankSlant
-	int_SetCallbackFunc LCDCFunc, HBlankSlant
+	int_SetVBlankFunc VBlankSlant
+	int_SetLCDCFunc HBlankSlant
 
 ; Enable the vblank and stat interrupts to try some video effects
 	ld  a, IEF_LCDC|IEF_VBLANK

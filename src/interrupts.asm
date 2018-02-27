@@ -17,13 +17,13 @@ int_InterruptRoutine: MACRO
 ; ************************************
 
 SECTION	"Vblank",ROM0[$0040]
-	int_InterruptRoutine VBlankFunc
+	int_InterruptRoutine int_VBlankFunc
 SECTION	"LCDC",ROM0[$0048]
-	int_InterruptRoutine LCDCFunc
+	int_InterruptRoutine int_LCDCFunc
 SECTION	"Timer_Overflow",ROM0[$0050]
-	int_InterruptRoutine TimerOverflowFunc
+	int_InterruptRoutine int_TimerOverflowFunc
 SECTION	"Serial",ROM0[$0058]
-	int_InterruptRoutine SerialFunc
+	int_InterruptRoutine int_SerialFunc
 SECTION	"p1thru4",ROM0[$0060]
 	reti
 
@@ -39,10 +39,10 @@ int_NopFunc::
 
 ; Set all the interrupts to do nothing
 int_Reset::
-	int_SetCallbackFunc VBlankFunc, int_NopFunc
-	int_SetCallbackFunc LCDCFunc, int_NopFunc
-    int_SetCallbackFunc TimerOverflowFunc, int_NopFunc
-    int_SetCallbackFunc SerialFunc, int_NopFunc
+	int_SetVBlankFunc int_NopFunc
+	int_SetLCDCFunc int_NopFunc
+    int_SetTimerOverflowFunc int_NopFunc
+    int_SetSerialFunc int_NopFunc
     ret
 
 ; Call a function pointer.
@@ -61,11 +61,11 @@ int_CallPointer:
 ; RAM for storing function pointers to your interrupt routines.
 ; ************************************
 SECTION "interrupt function pointers", WRAM0
-VBlankFunc::
+int_VBlankFunc::
 	DW 
-LCDCFunc::
+int_LCDCFunc::
 	DW 
-TimerOverflowFunc::
+int_TimerOverflowFunc::
     DW
-SerialFunc::
+int_SerialFunc::
     DW
