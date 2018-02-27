@@ -45,12 +45,31 @@ effect1_Run::
 .wait
 	halt
 	nop 
-	jr .wait
+
+    ld  a, P1F_5
+    ld  [rP1], a  ; Set the joypad to listen for button presses
+    ld  a, [rP1]    
+    bit 0, a      ; Did we hit A yet?
+
+    ;ld  [effect1_Finished], a
+    ;cp  0 ; Is there a better way to check if a == 0?
+	jr	nz, .wait
     ret
 
 effect1_VBlank:
     ld  hl, effect1_XOffset
 	dec [hl]
+
+    ; Check for an A press
+    ;ld  a, [rP1]
+    ;cp  P1F_0
+    ;jr nz, .done
+
+    ; A was pressed: set the finish flag
+    ;ld  a, 1
+	;ld  [effect1_Finished], a
+
+.done
 	ret
 
 ; This splits the screen into alternating sets of 8 lines
