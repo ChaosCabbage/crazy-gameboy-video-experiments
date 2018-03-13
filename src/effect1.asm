@@ -1,14 +1,17 @@
 INCLUDE "gbhardware.inc" 
 INCLUDE "interrupts.inc"
 INCLUDE "maths.inc"
+INCLUDE "joypad.inc"
 
+; ****************************************************************************************
+; RAM
+; ****************************************************************************************
 SECTION "Effect1Scratch", WRAM0
 
-; extra X scroll, incremented every frame
 effect1_XOffset:
-    DB 
+    DB ; extra X scroll, incremented every frame
 effect1_Finished:
-    DB
+    DB 
 
 SECTION "Effect1", ROM0
 
@@ -46,14 +49,9 @@ effect1_Run::
 	halt
 	nop 
 
-    ld  a, P1F_5
-    ld  [rP1], a  ; Set the joypad to listen for button presses
-    ld  a, [rP1]    
-    bit 0, a      ; Did we hit A yet?
-
-    ;ld  [effect1_Finished], a
-    ;cp  0 ; Is there a better way to check if a == 0?
-	jr	nz, .wait
+    ld  a, [effect1_Finished]
+    or  a
+	jr	z, .wait
     ret
 
 effect1_VBlank:
@@ -61,13 +59,13 @@ effect1_VBlank:
 	dec [hl]
 
     ; Check for an A press
-    ;ld  a, [rP1]
-    ;cp  P1F_0
-    ;jr nz, .done
-
+	call joypad
+	bit  JOY_A, a
+	jr z, .done
+	
     ; A was pressed: set the finish flag
-    ;ld  a, 1
-	;ld  [effect1_Finished], a
+    ld  a, 1
+	ld  [effect1_Finished], a
 
 .done
 	ret

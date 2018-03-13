@@ -51,7 +51,7 @@ OAMF_PAL1   EQU  %00010000 ; Palette number; 0,1
 ; -- P1 ($FF00)
 ; -- Register for reading joy pad info.    (R/W)
 ; --
-rP1 EQU $FF00
+rP1_LOW EQU $00
 
 P1F_5   EQU  %00100000 ; P15 out port
 P1F_4   EQU  %00010000 ; P14 out port
